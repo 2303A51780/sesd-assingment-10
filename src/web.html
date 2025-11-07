@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Hotel Booking - Monolith System</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 40px;
+      background: #f5f5f5;
+    }
+    h2 {
+      color: #333;
+      text-align: center;
+    }
+    .container {
+      max-width: 800px;
+      margin: auto;
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    input, button {
+      padding: 8px;
+      margin: 6px 0;
+      font-size: 14px;
+    }
+    button {
+      cursor: pointer;
+      border: none;
+      background: #007bff;
+      color: white;
+      border-radius: 4px;
+    }
+    button:disabled {
+      background: gray;
+      cursor: not-allowed;
+    }
+    .hotel {
+      background: #fafafa;
+      padding: 10px;
+      margin-top: 10px;
+      border-radius: 5px;
+      border: 1px solid #ddd;
+    }
+    #mono-results {
+      margin-top: 10px;
+    }
+    #mono-log {
+      background: #000;
+      color: #0f0;
+      font-family: monospace;
+      padding: 8px;
+      height: 150px;
+      overflow-y: auto;
+      margin-top: 10px;
+      border-radius: 5px;
+    }
+    .gray {
+      color: gray;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>🏨 Hotel Booking (Monolith Demo)</h2>
+
+    <label>Enter City:</label>
+    <input type="text" id="mono-city" placeholder="e.g., Mumbai or Delhi">
+    <button id="mono-search">Search Hotels</button>
+
+    <div id="mono-results"></div>
+
+    <hr>
+
+    <h3>Selected Room</h3>
+    <div id="mono-detail" class="gray">No room selected</div>
+    <button id="mono-book" disabled>Book Room</button>
+
+    <p id="mono-status" style="font-weight:bold;"></p>
+
+    <h3>Activity Log</h3>
+    <div id="mono-log"></div>
+  </div>
+
+  <script>
+    // Sample data for hotels and rooms
+    const hotels = [
+      {
+        id: 'H1', city: 'Mumbai', name: 'Sea View Residency',
+        rooms: [
+          { id: 'R1', type: 'Deluxe', price: 4500, avail: 3 },
+          { id: 'R2', type: 'Suite', price: 9000, avail: 1 }
+        ]
+      },
+      {
+        id: 'H2', city: 'Mumbai', name: 'Gateway Comforts',
+        rooms: [{ id: 'R3', type: 'Standard', price: 2500, avail: 5 }]
+      },
+      {
+        id: 'H3', city: 'Bengaluru', name: 'Garden Hotel',
+        rooms: [{ id: 'R4', type: 'Deluxe', price: 4000, avail: 2 }]
+      },
+      {
+        id: 'H4', city: 'Delhi', name: 'Capital Inn',
+        rooms: [{ id: 'R5', type: 'Suite', price: 8500, avail: 2 }]
+      }
+    ];
+
+    // Shared store
+    const store = { selected: null };
+
+    // Log helper
+    function log(msg) {
+      const logBox = document.getElementById("mono-log");
+      logBox.innerHTML += `[${new Date().toLocaleTimeString()}] ${msg}<br>`;
+      logBox.scrollTop = logBox.scrollHeight;
+    }
+
+    // Search hotels by city
+    function searchHotels() {
+      const city = document.getElementById("mono-city").value.trim();
+      if (!city) {
+        alert("Please enter a city name");
+        return;
+      }
+
+      log("Searching for hotels in " + city + "...");
+      const results = hotels.filter(h => h.city.toLowerCase() === city.toLowerCase());
+      displayHotels(results);
+    }
+
+    // Display search results
+    function displayHotels(list) {
+      const container = document.getElementById("mono-results");
+      container.innerHTML = "";
+
+      if (list.length === 0) {
+        container.innerHTML = `<small class='gray'>No hotels found.</small>`;
+        return;
+      }
+
+      list.forEach(hotel => {
+        const div = document.createElement("div");
+        div.className = "hotel";
+        div.innerHTML = `
+          <strong>${hotel.name}</strong><br>
+          <small class="gray">${hotel.city}</small><br>
+          ${hotel.rooms.map(r => `
+            <div style="margin-top:6px">
+              <em>${r.type}</em> — ₹${r.price} — Avail: ${r.avail}
+              <button onclick="selectRoom('${hotel.id}','${r.id}')">Select</button>
+            </div>
+          `).join('')}
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    // Select a room
+    function selectRoom(hotelId, roomId) {
+      const hotel = hotels.find(h => h.id === hotelId);
+      const room = hotel.rooms.find(r => r.id === roomId);
+      store.selected = { hotel, room };
+
+      document.getElementById("mono-detail").innerHTML =
+        `<strong>${hotel.name}</strong><div>Room: ${room.type} — ₹${room.price}</div>`;
+      document.getElementById("mono-book").disabled = false;
+
+      log("Selected room: " + room.type + " at " + hotel.name);
+    }
+
+    // Book the selected room
+    function bookRoom() {
+      if (!store.selected) return;
+
+      const { hotel, room } = store.selected;
+      if (room.avail <= 0) {
+        document.getElementById("mono-status").innerText = "❌ No rooms available!";
+        log("Booking failed for " + hotel.name);
+        return;
+      }
+
+      room.avail--;
+      document.getElementById("mono-status").innerText = "✅ Booking confirmed!";
+      log("Booking successful at " + hotel.name + " (" + room.type + ")");
+      displayHotels([hotel]);
+    }
+
+    // Event listeners
+    document.getElementById("mono-search").addEventListener("click", searchHotels);
+    document.getElementById("mono-book").addEventListener("click", bookRoom);
+  </script>
+</body>
+</html>
